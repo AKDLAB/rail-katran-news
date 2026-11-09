@@ -225,5 +225,6 @@ def queries():
 
 
 DDU_TOWNS_HI = [["पीडीडीयू", "डीडीयू", "मुगलसराय", "चंदौली", "सासाराम", "डेहरी"],
-                ["गया", "औरंगाबाद", "पलामू", "गढ़वा", "जपला", "डालटनगंज", "हुसैनाबाद", "सोननगर"]]
+                # "गया" alone is also the everyday verb ("went"), so search for the city's own names
+                ["गयाजी", "गया जंक्शन", "औरंगाबाद", "पलामू", "गढ़वा", "जपला", "डालटनगंज", "हुसैनाबाद", "सोननगर"]]
 DDU_TOWNS_EN = ["DDU", "Mughalsarai", "Chandauli", "Sasaram", "Dehri", "Gaya", "Daltonganj", "Garhwa"]
