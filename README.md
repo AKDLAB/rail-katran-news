@@ -6,7 +6,7 @@ full articles.
 
 - The collector is `fetcher/fetch_news.py`; newspapers, railway zones and search words are in `fetcher/sources.py`.
 - `.github/workflows/collect.yml` runs it on a schedule and publishes `news.json` to the `data` branch
-  (one commit, replaced each run): `https://raw.githubusercontent.com/AKDLAB/rail-katran-news/data/news.json`
+  (one commit, replaced each run): `https://raw.githubusercontent.com/AKDLAB/rail-katran-news/refs/heads/data/news.json`
 - Run it by hand: Actions → "Collect railway news" → Run workflow.
 
 The fetcher files are copied from the main Rail Katran project, which is where they are edited.
