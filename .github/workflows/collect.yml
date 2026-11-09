@@ -1,0 +1,60 @@
+name: Collect railway news
+
+# Every 2 hours (UTC; 00:10 UTC = 5:40 AM IST) plus a manual "Run workflow" button.
+on:
+  schedule:
+    - cron: "10 */2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to update the data branch
+  actions: write    # to keep this schedule switched on
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -r fetcher/requirements.txt
+
+      - name: Bring back the last run's news and link cache
+        run: |
+          mkdir -p data
+          if git fetch --depth=1 origin data; then
+            git show origin/data:news.json > data/news.json || rm -f data/news.json
+            git show origin/data:link-cache.json > data/link-cache.json || rm -f data/link-cache.json
+          fi
+          ls -la data
+
+      - name: Collect news
+        run: python fetcher/fetch_news.py --data data --max-decode 150 || echo "kept the previous news"
+
+      - name: Publish to the data branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          test -s data/news.json || { echo "no news file to publish"; exit 0; }
+          cd data
+          git init -q -b data
+          git config user.name "rail-katran-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add news.json link-cache.json
+          git commit -q -m "news $(date -u +%Y-%m-%dT%H:%MZ)"
+          # one commit only, replaced each run, so the repository does not grow
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+
+      - name: Keep the schedule alive (GitHub pauses idle schedules after 60 days)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/collect.yml/enable" || true
