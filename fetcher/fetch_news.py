@@ -256,6 +256,9 @@ def preview_card(url):
         desc = desc[cut + 2:] if cut > 0 else desc[first_hi.start():]
     if len(desc) > 320:
         desc = desc[:317].rsplit(" ", 1)[0] + "…"
+    desc = desc.strip()
+    if len(desc) < 25 or desc.count(" ") < 3:
+        desc = ""        # "dainikbhaskar", "Indian Railway": the site's name, not a summary
     return {"desc": desc, "img": img, "title": re.sub(r"\s+", " ", title)[:300]}
 
 
