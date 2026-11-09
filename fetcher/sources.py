@@ -121,7 +121,8 @@ CITY_VARIANTS = {
     "झांसी": ["झांसी", "झाँसी"], "Tiruchchirappalli": ["Tiruchchirappalli", "Tiruchirappalli", "Trichy"],
     "Hubballi": ["Hubballi", "Hubli"], "हुबली": ["हुबली", "हुब्बल्ली"], "Bengaluru": ["Bengaluru", "Bangalore"],
     "Mysuru": ["Mysuru", "Mysore"], "Prayagraj": ["Prayagraj", "Allahabad"], "प्रयागराज": ["प्रयागराज", "इलाहाबाद"],
-    "Deen Dayal Upadhyaya": ["Deen Dayal Upadhyaya", "DDU", "Mughalsarai"], "दीनदयाल उपाध्याय": ["दीनदयाल उपाध्याय", "डीडीयू", "मुगलसराय"],
+    "Deen Dayal Upadhyaya": ["Deen Dayal Upadhyaya", "DDU", "PDDU", "Mughalsarai"],
+    "दीनदयाल उपाध्याय": ["दीनदयाल उपाध्याय", "डीडीयू", "पीडीडीयू", "मुगलसराय"],
     "Visakhapatnam": ["Visakhapatnam", "Vizag", "Waltair"], "Thiruvananthapuram": ["Thiruvananthapuram", "Trivandrum"],
     "Vadodara": ["Vadodara", "Baroda"], "Mumbai Central": ["Mumbai Central"], "Izzatnagar": ["Izzatnagar", "Bareilly"],
     "इज्जतनगर": ["इज्जतनगर", "बरेली"], "रांची": ["रांची", "राँची"], "खड़गपुर": ["खड़गपुर", "खड्गपुर"],
@@ -216,4 +217,13 @@ def queries():
         q.append(('"%s"' % zen, "en"))
         q.append(("रेलवे (" + " OR ".join(d[1] for d in divs) + ")", "hi"))
         q.append(("railway (" + " OR ".join(d[0] for d in divs) + ")", "en"))
+    # towns of Pt. Deen Dayal Upadhyaya (DDU) division, whose daily clipping file this app is used for
+    for towns in DDU_TOWNS_HI:
+        q.append(("(रेलवे OR ट्रेन OR रेल) (" + " OR ".join(towns) + ")", "hi"))
+    q.append(("(railway OR train) (" + " OR ".join(DDU_TOWNS_EN) + ")", "en"))
     return q
+
+
+DDU_TOWNS_HI = [["पीडीडीयू", "डीडीयू", "मुगलसराय", "चंदौली", "सासाराम", "डेहरी"],
+                ["गया", "औरंगाबाद", "पलामू", "गढ़वा", "जपला", "डालटनगंज", "हुसैनाबाद", "सोननगर"]]
+DDU_TOWNS_EN = ["DDU", "Mughalsarai", "Chandauli", "Sasaram", "Dehri", "Gaya", "Daltonganj", "Garhwa"]
