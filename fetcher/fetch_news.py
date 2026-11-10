@@ -143,6 +143,26 @@ def rss_search(query, lang, days):
     return out
 
 
+def site_feed(dom, url, need_area):
+    """Stories from a newspaper's own RSS feed, in the same shape as rss_search results."""
+    r = requests.get(url, headers=UA, timeout=(6, 25))
+    r.raise_for_status()
+    root = ET.fromstring(r.content)
+    paper = PAPER_BY_DOMAIN.get(dom)
+    out = []
+    for it in root.iter("item"):
+        title = (it.findtext("title") or "").strip()
+        link = (it.findtext("link") or "").strip()
+        text = title + " " + re.sub(r"<[^>]+>", " ", html.unescape(it.findtext("description") or ""))
+        if not title or not link.startswith(("http://", "https://")):
+            continue
+        if need_area and not any(w.lower() in text.lower() for w in S.AREA_WORDS):
+            continue
+        out.append({"title": title, "link": link, "pub": it.findtext("pubDate") or "",
+                    "source": paper[1] if paper else dom, "source_url": "https://" + dom, "lang": "hi"})
+    return out
+
+
 # ---------- tagging ----------
 def _variants(name):
     return S.CITY_VARIANTS.get(name, [name])
@@ -199,6 +219,8 @@ def tag(text):
 
 # ---------- link decoding + preview card ----------
 def decode_link(link):
+    if urllib.parse.urlparse(link).hostname not in ("news.google.com",):
+        return link if link.startswith(("http://", "https://")) else ""   # a site's own feed: already the real link
     try:
         from googlenewsdecoder import gnewsdecoder
         d = gnewsdecoder(link, interval=None)
@@ -470,6 +492,17 @@ def main():
         progress("search", i, len(qs))
         time.sleep(0.35)
     log("searches: %d, failed: %d, raw results: %d" % (len(qs), failed, len(raw)))
+    # the Varanasi dailies' own feeds (their Chandauli / DDU stories rarely reach Google News)
+    feed_items = 0
+    for dom, url, need_area in S.SITE_FEEDS:
+        try:
+            got = site_feed(dom, url, need_area)
+            raw += got
+            feed_items += len(got)
+        except Exception as e:  # noqa: BLE001  (a small site being down must not stop the run)
+            log("  feed failed:", url, str(e)[:80])
+        time.sleep(0.3)
+    log("site feeds: %d, stories found: %d" % (len(S.SITE_FEEDS), feed_items))
     if failed > len(qs) * 0.8:
         log("almost every search failed (no internet?); keeping the previous file")
         return EXIT_OFFLINE

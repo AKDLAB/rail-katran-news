@@ -22,6 +22,10 @@ PAPERS = [
     ("rashtriyasahara.com", "Rashtriya Sahara", "राष्ट्रीय सहारा", "hi", "paper"),
     ("swadeshnews.in", "Swadesh", "स्वदेश", "hi", "paper"),
     ("inextlive.com", "Inext", "आई नेक्स्ट", "hi", "paper"),
+    # Varanasi-region dailies with Chandauli pages (their websites carry little; see SITE_FEEDS)
+    ("janwarta.com", "Jan Varta", "जनवार्ता", "hi", "paper"),
+    ("jansandeshtimes.in", "Jan Sandesh", "जनसंदेश टाइम्स", "hi", "paper"),
+    ("ajhindidaily.com", "Aaj", "आज", "hi", "paper"),
     # English newspapers
     ("timesofindia.indiatimes.com", "The Times of India", "द टाइम्स ऑफ इंडिया", "en", "paper"),
     ("hindustantimes.com", "Hindustan Times", "हिन्दुस्तान टाइम्स", "en", "paper"),
@@ -91,6 +95,9 @@ SOURCE_ALIASES = {
     "lokmat times": "lokmattimes.com", "millennium post": "millenniumpost.in", "bhaskar english": "bhaskarenglish.in",
     "dd news": "ddnews.gov.in", "news on air": "newsonair.gov.in", "pib": "pib.gov.in",
     "press information bureau": "pib.gov.in",
+    "janwarta": "janwarta.com", "jan varta": "janwarta.com", "janvarta": "janwarta.com",
+    "jansandeshtimes.in": "jansandeshtimes.in", "jansandesh times": "jansandeshtimes.in", "jan sandesh": "jansandeshtimes.in",
+    "ajhindidaily.com": "ajhindidaily.com", "aaj": "ajhindidaily.com",
 }
 
 # Railway zones with their divisions. Each name is (English, Hindi).
@@ -221,6 +228,14 @@ def queries():
     for towns in DDU_TOWNS_HI:
         q.append(("(रेलवे OR ट्रेन OR रेल) (" + " OR ".join(towns) + ")", "hi"))
     q.append(("(railway OR train) (" + " OR ".join(DDU_TOWNS_EN) + ")", "en"))
+    # the editions the DDU office reads every day: each paper's railway news from those towns, and from
+    # Pt. Deen Dayal Upadhyay Nagar / Mughalsarai in every one of these papers
+    for dom, towns in EDITIONS.items():
+        for town in towns:
+            names = (['"%s"' % t for t in TITLE_TAGS[town]] if dom in BY_TITLE else TOWN_NAMES[town]
+                     + (['"%s"' % t for t in TITLE_TAGS[town]] if dom in TITLE_TOO else []))
+            q.append((RAIL_Q + " (" + " OR ".join(names) + ") site:" + dom, "hi"))
+        q.append((RAIL_Q + " (" + " OR ".join(DDU_NAMES) + ") site:" + dom, "hi"))
     return q
 
 
@@ -228,3 +243,53 @@ DDU_TOWNS_HI = [["पीडीडीयू", "डीडीयू", "मुगल
                 # "गया" alone is also the everyday verb ("went"), so search for the city's own names
                 ["गयाजी", "गया जंक्शन", "औरंगाबाद", "पलामू", "गढ़वा", "जपला", "डालटनगंज", "हुसैनाबाद", "सोननगर"]]
 DDU_TOWNS_EN = ["DDU", "Mughalsarai", "Chandauli", "Sasaram", "Dehri", "Gaya", "Daltonganj", "Garhwa"]
+
+# Editions read by the DDU division office (asked for by the user, 10.11.2026): paper -> towns whose railway news
+# is searched separately, so it is found even on days the paper has many other railway stories.
+RAIL_Q = "(रेलवे OR ट्रेन OR रेल OR स्टेशन OR जंक्शन)"
+TOWN_NAMES = {
+    "Gaya": ["गयाजी", '"गया जंक्शन"', '"गया जी"'],          # not plain "गया", which is also the verb "went"
+    "Sasaram": ["सासाराम", "रोहतास"],
+    "Aurangabad": ["औरंगाबाद", '"अनुग्रह नारायण रोड"', "रफीगंज"],
+    "Palamu": ["पलामू", "डालटनगंज", "मेदिनीनगर"],
+    "Arrah": ["आरा", "भोजपुर"],
+    "Chandauli": ["चंदौली"],
+    "Bhabhua Road": ['"भभुआ रोड"', "भभुआ", "कैमूर"],
+}
+# how Hindustan and Amar Ujala begin a town's stories ("Sasaram News: ...")
+TITLE_TAGS = {
+    "Chandauli": ["Chandauli News"], "Gaya": ["Gaya News"], "Sasaram": ["Sasaram News", "Rohtas News"],
+    "Aurangabad": ["Aurangabad News"], "Arrah": ["Ara News", "Bhojpur News"], "Palamu": ["Palamu News"],
+    "Bhabhua Road": ["Bhabua News", "Kaimur News"],
+}
+# Hindustan's pages list all its towns in their menus, so searching a town's name returns every story of the site:
+# search the town's story titles instead. Amar Ujala gets both.
+BY_TITLE = {"livehindustan.com"}
+TITLE_TOO = {"amarujala.com"}
+DDU_NAMES = ["पीडीडीयू", "डीडीयू", "मुगलसराय", '"दीनदयाल उपाध्याय"', '"दीन दयाल उपाध्याय"']
+EDITIONS = {
+    "bhaskar.com": ["Gaya", "Sasaram", "Aurangabad", "Palamu", "Arrah"],
+    "amarujala.com": ["Chandauli"],
+    "livehindustan.com": ["Chandauli", "Gaya", "Sasaram", "Aurangabad", "Arrah", "Palamu", "Bhabhua Road"],
+    "jagran.com": ["Chandauli", "Gaya", "Sasaram", "Aurangabad", "Arrah", "Palamu", "Bhabhua Road"],
+    "janwarta.com": ["Chandauli"],
+    "jansandeshtimes.in": ["Chandauli"],
+    "ajhindidaily.com": ["Chandauli"],
+}
+
+# Google News carries few stories of the three Varanasi dailies, so their own WordPress feeds are read too:
+# (paper's domain, feed address, keep only items naming Chandauli / DDU / Mughalsarai?). Chandauli and DDU stories
+# are often filed under Varanasi; a site search feed (?s=word&feed=rss2) finds them wherever they are filed.
+AREA_WORDS = ["चंदौली", "मुगलसराय", "पीडीडीयू", "डीडीयू", "दीनदयाल उपाध्याय नगर", "दीन दयाल उपाध्याय नगर",
+              "Chandauli", "Mughalsarai", "PDDU", "DDU"]
+SITE_FEEDS = [
+    ("janwarta.com", "https://janwarta.com/state-news/uttar-pradesh/chandauli/feed/", False),
+    ("janwarta.com", "https://janwarta.com/varanasi/feed/", True),
+    ("jansandeshtimes.in", "https://jansandeshtimes.in/category/state/uttar-pradesh/chandauli/feed/", False),
+    ("jansandeshtimes.in", "https://jansandeshtimes.in/category/state/uttar-pradesh/varanasi/feed/", True),
+    ("jansandeshtimes.in", "https://jansandeshtimes.in/feed/", True),
+    ("ajhindidaily.com", "https://ajhindidaily.com/chandauli/feed", False),
+    ("ajhindidaily.com", "https://ajhindidaily.com/varanasi/feed", True),
+    ("ajhindidaily.com", "https://ajhindidaily.com/feed", True),
+] + [(dom, "https://%s/?s=%s&feed=rss2" % (dom, word), True)
+     for dom in ("janwarta.com", "jansandeshtimes.in") for word in ("चंदौली", "मुगलसराय", "पीडीडीयू", "डीडीयू")]
